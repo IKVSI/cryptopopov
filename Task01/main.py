@@ -159,15 +159,18 @@ def alice(args, conn):
         print("-"*80)
     conn.log("Сообщение \"{}\" отправлено Bob-у".format(" ".join(args.messange)))
 
+
 def main(args):
     conn = Sock(args.addr, args.port, args.s)
-    if conn.name == "Bob":
+    if args.s:
         bob(args, conn)
     else:
         alice(args, conn)
     conn.close()
+    if args.p:
+        print("\nПауза... Нажмите <Enter> для выхода ...")
+        input()
 
-import traceback
 if __name__ == "__main__":
     # -- получение аргументов строки --
     parser = argparse.ArgumentParser(
@@ -178,9 +181,7 @@ if __name__ == "__main__":
     parser.add_argument("-addr", default="127.0.0.1", type=str, help="Адрес подключения или сервера")
     parser.add_argument("-prime", default=0, type=int, help="Установить своё простое число для сообщения")
     parser.add_argument("-primeend", default=0, type=int, help="Если установлено это число, то простое будет взято из диапазона [prime, primeend]")
+    parser.add_argument("-p", action='store_true', help="Пауза в конце программы")
     parser.add_argument("messange", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку cp866")
-    try:
-        main(parser.parse_args())
-    except Exception as ex:
-        traceback.print_exc()
-    input()
+    main(parser.parse_args())
+
