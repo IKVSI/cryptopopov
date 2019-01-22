@@ -2,6 +2,7 @@
 
 import argparse
 import random
+import sys
 from multiprocessing import Process, Pipe
 
 #  --  Псевдоимена  --
@@ -20,6 +21,11 @@ names = [
 
 def log(name, mess):
     return name + (7-len(name))*" "+": "+mess
+
+#  --  Переинициализация команды print для multiprocessing --
+def print(text, end='\n'):
+    sys.stdout.write(str(text)+'\n')
+    sys.stdout.flush()
 
 def client(name, pipes, messange):
     binmessange = ""
