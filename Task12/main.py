@@ -3,7 +3,6 @@
 import argparse
 import random
 from sympy import sieve
-from sympy.ntheory import factorint
 
 def reverse(q, prime):
     x2, x1, y2, y1 = 1, 0, 0, 1

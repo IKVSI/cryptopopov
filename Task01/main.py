@@ -6,6 +6,8 @@ import argparse
 from sympy import sieve
 from sympy.ntheory import factorint
 
+CODEPAGE = "cp866"
+
 class Sock():
 
     def __init__(self, address, port, server=False):
@@ -16,7 +18,7 @@ class Sock():
             self.name = "Bob"
             sock = socket.socket()
             sock.bind((self.address, self.port))
-            self.log("Ожидание подключения от Alice")
+            self.log("Ожидание подключения от Alice host={} port={}".format(self.address, self.port))
             sock.listen(1)
             self.connection, self.conn_address = sock.accept()
         else:
@@ -115,7 +117,7 @@ def bob(args, conn):
         conn.log("3 шаг ({} блок): Получаем M^Eb = {} (mod p)".format(i+1, Meb))
         Mb = pow(Meb, sh.decrypt, sh.prime)
         conn.log("4 шаг ({} блок): Вычисляем M = {}".format(i+1, Mb))
-        mblock = Mb.to_bytes(sh.blocksize, "little").decode("cp866")
+        mblock = Mb.to_bytes(sh.blocksize, "little").decode(CODEPAGE)
         conn.log("{} блок: Преобразуем M = {} в \"{}\"".format(i+1, Mb, mblock))
         M.append(mblock)
         print("-"*80)
@@ -142,7 +144,7 @@ def alice(args, conn):
     M = [M[i*sh.blocksize:i*sh.blocksize+sh.blocksize] for i in range(len(M)//sh.blocksize)]
     print("-"*80)
     for i in range(len(M)):
-        mblock = M[i].encode("cp866")
+        mblock = M[i].encode(CODEPAGE)
         Mb = int.from_bytes(mblock, "little")
         conn.log("{} блок: Преобразуем \"{}\" в число M = {}".format(i+1, M[i], Mb))
         sh.generate_key()
@@ -161,7 +163,7 @@ def alice(args, conn):
 
 
 def main(args):
-    conn = Sock(args.addr, args.port, args.s)
+    conn = Sock(args.host, args.port, args.s)
     if args.s:
         bob(args, conn)
     else:
@@ -178,10 +180,10 @@ if __name__ == "__main__":
         )
     parser.add_argument("-s", action='store_true', help="Запуск сервера Bob")
     parser.add_argument("-port", default=9999, type=int, help="Порт для соединения или сервера")
-    parser.add_argument("-addr", default="127.0.0.1", type=str, help="Адрес подключения или сервера")
+    parser.add_argument("-host", default="127.0.0.1", type=str, help="Адрес подключения или сервера")
     parser.add_argument("-prime", default=0, type=int, help="Установить своё простое число для сообщения")
     parser.add_argument("-primeend", default=0, type=int, help="Если установлено это число, то простое будет взято из диапазона [prime, primeend]")
     parser.add_argument("-p", action='store_true', help="Пауза в конце программы")
-    parser.add_argument("messange", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку cp866")
+    parser.add_argument("messange", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку (default = {})".format(CODEPAGE))
     main(parser.parse_args())
 
