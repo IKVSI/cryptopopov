@@ -27,14 +27,14 @@ def print(text, end='\n'):
     sys.stdout.write(str(text)+'\n')
     sys.stdout.flush()
 
-def client(name, pipes, messange):
-    binmessange = ""
-    if messange:
-        messange = messange.encode("cp866")
-        for i in messange:
-            binmessange += "{:08b}".format(i)
+def client(name, pipes, message):
+    binmessage = ""
+    if message:
+        message = message.encode("cp866")
+        for i in message:
+            binmessage += "{:08b}".format(i)
         print(log(names[name], "Преобразовано сообщение к бинарному виду"))
-        print(log(names[name], "M:{}".format(binmessange)))
+        print(log(names[name], "M:{}".format(binmessage)))
     j = 0
     sym = 0
     M = ""
@@ -48,7 +48,7 @@ def client(name, pipes, messange):
             r[i] = pipes[i].recv()
         for i in pipes.keys():
             r[i] ^= s[i]
-        if messange:
+        if message:
             logtemp = "-- {} бит --".format(j)
             print(logtemp+(80-len(logtemp))*'-')
         logtemp = []
@@ -61,10 +61,10 @@ def client(name, pipes, messange):
         for i in pipes.keys():
             ret ^= r[i]
             temp += "{}({})^".format(i[0], r[i])
-        if messange:
-            if (binmessange[j] == '1'):
+        if message:
+            if (binmessage[j] == '1'):
                 ret ^= 1
-            temp += "M({})^".format(binmessange[j])
+            temp += "M({})^".format(binmessage[j])
         logtemp.append(log(names[name], "Сгенерирован бит {} = {}".format(ret, temp[:-1])))
         for i in pipes.keys():
             pipes[i].send(ret)
@@ -96,7 +96,7 @@ def main(args):
     if (args.n < 3) or (args.n > 10):
         args.n = 3
     curent_names = names[:args.n]
-    args.messange = " ".join(args.messange)
+    args.message = " ".join(args.message)
     pipes = []
     for i in range(args.n):
         pipes.append(dict())
@@ -111,7 +111,7 @@ def main(args):
     for i in range(args.n):
         m = ""
         if i == anonim:
-            m = args.messange+'\0'
+            m = args.message+'\0'
         proc.append(Process(target=client, args=(i, pipes[i], m)))
     for i in range(args.n):
         proc[i].start()
@@ -123,6 +123,6 @@ if __name__ == "__main__":
         description="Программа реализации булевого протокола передачи анонимного сообщения"
         )
     parser.add_argument("-n", type=int, default=3, help="Количество людей в чате (от 3 до 10) default=3")
-    parser.add_argument("messange", type=str, nargs="+", help="Сообщение для анонимной передачи")
+    parser.add_argument("message", type=str, nargs="+", help="Сообщение для анонимной передачи")
     main(parser.parse_args())
 

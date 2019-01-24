@@ -61,8 +61,8 @@ class Sock():
         self.connection.close()
     
     #  --  Логи программы  --
-    def log(self, messange):
-        print("{}: {}".format(self.name, messange))
+    def log(self, message):
+        print("{}: {}".format(self.name, message))
 
 # Структура для преобразования данных
 class Shamir():
@@ -124,8 +124,8 @@ def bob(args, conn):
         if mblock[-1] == '\0':
             break
         i += 1
-    messange = "".join(M).replace('\0', '')
-    conn.log("Сообщение \"{}\" получено от Alice".format(messange))
+    message = "".join(M).replace('\0', '')
+    conn.log("Сообщение \"{}\" получено от Alice".format(message))
 
 
 #  --  Обработка для Alice --
@@ -136,7 +136,7 @@ def alice(args, conn):
     conn.sendInt(sh.prime)
     conn.log("Простое число p={} отправленно Bob-у".format(sh.prime))
     #  --  Отправка сообщения блоками  --
-    M = " ".join(args.messange)
+    M = " ".join(args.message)
     M += '\0'
     if len(M)%sh.blocksize:
         M += (sh.blocksize-len(M)%sh.blocksize)*'\0'
@@ -159,7 +159,7 @@ def alice(args, conn):
         conn.log("3 шаг ({} блок): Отправляем M^Ea^Eb^Da = M^Eb = {} (mod p)".format(i+1, Meb))
         conn.log("Закончена обработка {} блока".format(i+1))
         print("-"*80)
-    conn.log("Сообщение \"{}\" отправлено Bob-у".format(" ".join(args.messange)))
+    conn.log("Сообщение \"{}\" отправлено Bob-у".format(" ".join(args.message)))
 
 
 def main(args):
@@ -184,6 +184,6 @@ if __name__ == "__main__":
     parser.add_argument("-prime", default=0, type=int, help="Установить своё простое число для сообщения")
     parser.add_argument("-primeend", default=0, type=int, help="Если установлено это число, то простое будет взято из диапазона [prime, primeend]")
     parser.add_argument("-p", action='store_true', help="Пауза в конце программы")
-    parser.add_argument("messange", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку (default = {})".format(CODEPAGE))
+    parser.add_argument("message", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку (default = {})".format(CODEPAGE))
     main(parser.parse_args())
 

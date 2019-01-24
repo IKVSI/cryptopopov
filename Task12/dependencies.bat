@@ -1,2 +1,2 @@
-pip install sympy
+pip3 install sympy
 pause
