@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 
 import argparse
-import random
 import json
 import datetime
-import hashlib
 import sys
-
+import Cryptodome.Random.random as random
+from Cryptodome.Hash import SHA1
+from Cryptodome.PublicKey import RSA
+from Cryptodome.Signature import pss as PSS
 from multiprocessing import Process, Pipe
+
 NAME="MASTER"
 AMOUNT = 1000
 NAMES = [
@@ -22,13 +24,21 @@ NAMES = [
     "Julia"
 ]
 
-def log(messange):
-    return NAME + (7-len(NAME))*" "+": "+messange
+def log(message):
+    return NAME + (7-len(NAME))*" "+": "+message
 
 #  --  Переинициализация команды print для multiprocessing --
 def print(text, end='\n'):
     sys.stdout.write(str(text)+'\n')
     sys.stdout.flush()
+
+#  --  Генерация ID  --
+def generateID():
+    ID = ""
+    for i in range(16):
+        t = hex(random.randint(0,255))[2:]
+        ID += t if len(t) == 2 else '0'+t
+    return ID
 
 def encode(data, gamma=b''):
     fl = True if gamma else False
@@ -45,7 +55,7 @@ def encode(data, gamma=b''):
 class Check():
     
     def __init__(self, amount):
-        self.data = {"amount": amount, "ID": random.randint(1, 65535)}
+        self.data = {"amount": amount, "ID": generateID()}
         self.date = None
         self.signature = None
         self.close()
@@ -59,6 +69,7 @@ class Check():
 
     def close(self):
         self.data = json.dumps(self.data).encode("utf-8")
+        self.datahash = SHA1.new(self.data).hexdigest()
 
     def open(self):
         dt = None
@@ -79,44 +90,59 @@ class Check():
     def sign(self, signature, date):
         self.date = date
         self.signature = signature
-        return self.encode()
     
     def __str__(self):
+        ln = 55
         if type(self.data) is bytes:
             amount = None
             ID = None
         else:
             amount = self.data["amount"]
             ID = self.data["ID"]
-        temp = [" "+"-"*50+" "]
+        temp = [" "+"-"*ln+" "]
         t = "|  Check  ID : {}".format(ID)
-        temp.append(t + (51 - len(t)) * " " + "|")
+        temp.append(t + (ln+1 - len(t)) * " " + "|")
         t = "|  Amount    : {} $".format(amount)
-        temp.append(t + (51 - len(t)) * " " + "|")
-        if type(self.data) is bytes :
-            t = "|  Data hash : {}".format(hashlib.md5(self.data).hexdigest())
-            temp.append(t + (51 - len(t)) * " " + "|")
-        else:
-            dt = json.dumps(self.data).encode("utf-8")
-            t = "|  Data hash : {}".format(hashlib.md5(dt).hexdigest())
-            temp.append(t + (51 - len(t)) * " " + "|")
+        temp.append(t + (ln+1 - len(t)) * " " + "|")
+        t = "|  Data hash : {}".format(self.datahash)
+        temp.append(t + (ln+1 - len(t)) * " " + "|")
         t = "|  Date/Time : {}".format(self.date)
-        temp.append(t + (51 - len(t)) * " " + "|")
-        t = "|  Signature : {}".format(self.signature)
-        temp.append(t + (51 - len(t)) * " " + "|")
-        temp.append(" "+"-"*51+" ")
+        temp.append(t + (ln+1 - len(t)) * " " + "|")
+        if self.signature:
+            signature = ""
+            for i in self.signature:
+                t = hex(i)[2:]
+                signature += t if len(t) == 2 else '0'+t
+            i = 0
+            t = "|  Signature : {}"
+            while i < len(signature):
+                if (i + len(self.datahash)) < len(signature):
+                    t = t.format(signature[i:i+len(self.datahash)])
+                    temp.append(t + (ln+1 - len(t)) * " " + "|")
+                    t = "|              {}"
+                else:
+                    t = t.format(signature[i:])
+                    temp.append(t + (ln+1 - len(t)) * " " + "|")
+                i += len(self.datahash)
+        else:
+            t = "|  Signature : {}"
+            t = t.format(self.signature)
+            temp.append(t + (ln+1 - len(t)) * " " + "|")
+        temp.append(" "+"-"*ln+" ")
         temp.append("")
         return "\n".join(temp)
 
 
-def Alice(count, clientpipe, bankpipe, args):
+def Alice(sellerpipe, bankpipe, PUBLIC_BANK_KEY, args):
     global NAME
+    count = args.count
     NAME = "Alice"
     print(log("Генерируем чеки в количесве {} штук".format(count)))
     checks = []
     gamma = []
-    if args.amount != AMOUNT:
-        t = random.randint(0, count-1)
+    t = random.randint(0, count-1)
+    if not args.amount:
+        args.amount = AMOUNT
     for i in range(count):
         if t == i:
             checks.append(Check(args.amount))
@@ -129,7 +155,7 @@ def Alice(count, clientpipe, bankpipe, args):
     while type(check) is int:
         if check == -1:
             print(log("Банк отказался подписывать чеки"))
-            clientpipe.send(-1)
+            sellerpipe.send(-1)
             return
         print(log("Получен номер {} чека для проверки суммы".format(check+1)))
         bankpipe.send(gamma[check])
@@ -137,12 +163,25 @@ def Alice(count, clientpipe, bankpipe, args):
     choice = bankpipe.recv()
     print(log("Получен чек подписанный банком"))
     check.decode(gamma[choice])
-    print(log("Конверт декодирован моей гамма\n{}".format(check)+"-"*60))
+    print(log("Расшифровываем конверт"))
     check.open()
-    print(log("Отправляем декодированный чек продавцу"))
-    clientpipe.send(check)
+    print(check)
+    if args.fakedata:
+        check.data["amount"] = 100
+        print(log("Меняем сумму в чеке и пробуем отдать продавцу"))
+        sellerpipe.send(check)
+        return
+    if args.fakesign:
+        ch = Check(100)
+        ch.sign(check.signature, check.date)
+        ch.open()
+        print(log("Генерируем поддельный чек с полученной подписью банка"))
+        sellerpipe.send(ch)
+        return
+    print(log("Отправляем чек продавцу"))
+    sellerpipe.send(check)
 
-def Client(alicepipe, bankpipe, args):
+def Seller(alicepipe, bankpipe, PUBLIC_BANK_KEY, args):
     global NAME
     NAME = random.choice(NAMES)
     check = alicepipe.recv()
@@ -150,18 +189,21 @@ def Client(alicepipe, bankpipe, args):
         print(log("Чек не получен"))
         return
     print(log("Получен чек"))
-    print(log("Пробуем обналичить чек в банке"))
-    bankpipe.send(check)
-    money = bankpipe.recv()
-    if money < 0:
-        print(log("Чек не прошёл проверку, отказ обналичить"))
-    else:
-        print(log("Чек подтверждён, получено {} $".format(money)))
+    try:
+        datahash = SHA1.new(json.dumps(check.data).encode("utf-8")).hexdigest()
+        print("Проверяем целостость данных\n  datahash       : {}\n  check.datahash : {}".format(datahash, check.datahash))
+        if datahash != check.datahash:
+            print(log("Чек поддельный!!! Изменены данные!"))
+            return
+        print(log("Проверяем подпись банка"))
+        PSS.new(RSA.import_key(PUBLIC_BANK_KEY)).verify(SHA1.new((check.datahash + check.date).encode("utf-8")), check.signature)
+        print(log("Подпись проверена открытым ключом Банка, чек корректный"))
+    except ValueError as ex:
+        print(log("Чек поддельный!!! {}".format(ex)))
 
-def Bank(count, alicepipe, clientpipe, args):
+def Bank(alicepipe, sellerpipe, PRIVATE_BANK_KEY, PUBLIC_BANK_KEY, args):
     global NAME
     NAME = "Bank"
-    checks = dict()
     alicechecks = alicepipe.recv()
     print(log("Получено {} чеков".format(len(alicechecks))))
     choice = random.randint(0, len(alicechecks)-1)
@@ -187,44 +229,30 @@ def Bank(count, alicepipe, clientpipe, args):
             alicepipe.send(-1)
             return
     check = alicechecks[choice]
-    signature = hashlib.md5(("BANK"+str(datetime.datetime.now())).encode("utf-8")).hexdigest()
-    checks[signature] = check.sign(signature, '{0:%Y-%m-%d %H:%M}'.format(datetime.datetime.now()))
-    print(log("Чек номер {} подписан банком, зашифрован и отправлен\n{}".format(choice+1, check)), end="")
+    date = '{0:%Y-%m-%d %H:%M}'.format(datetime.datetime.now())
+    check.sign(PSS.new(RSA.import_key(PRIVATE_BANK_KEY)).sign(SHA1.new((check.datahash+date).encode("utf-8"))), date)
+    print(log("Чек номер {} подписан банком и отправлен\n{}".format(choice+1, check)), end="")
     print("-"*60)
     alicepipe.send(check)
     alicepipe.send(choice)
-    check = clientpipe.recv()
-    print(log("Получен чек на проверку"))
-    if check.signature in checks.keys():
-        print(log("Сигнатура чека найдена в базе"))
-        print(log("Пробуем декодировать и открыть конверт"))
-        check.decode(checks[check.signature])
-        if check.open():
-            print(check)
-            print(log("Чек подтверждён и обналичено {} $".format(check.data["amount"])))
-            clientpipe.send(check.data["amount"])
-        else:
-            clientpipe.send(-1)
-    else:
-        print(log("Не найден чек в базе"))
-        clientpipe.send(-1)
 
 def main(args):
-    aliceclientpipe, clientalicepipe = Pipe(True)
-    bankclientpipe, clientbankpipe = Pipe(True)
+    print(log("Генерируем ключи RSA Банка для подписи"))
+    PRIVATE_BANK_KEY = RSA.generate(1024)
+    PUBLIC_BANK_KEY = PRIVATE_BANK_KEY.publickey().export_key()
+    PRIVATE_BANK_KEY = PRIVATE_BANK_KEY.export_key()
+    alicesellerpipe, selleralicepipe = Pipe(True)
+    banksellerpipe, sellerbankpipe = Pipe(True)
     alicebankpipe, bankalicepipe = Pipe(True)
-    alice = Process(target=Alice, args=(args.count, aliceclientpipe, alicebankpipe, args))
-    client = Process(target=Client, args=(clientalicepipe, clientbankpipe, args))
-    bank = Process(target=Bank, args=(args.count, bankalicepipe, bankclientpipe, args))
+    alice = Process(target=Alice, args=(alicesellerpipe, alicebankpipe, PUBLIC_BANK_KEY, args))
+    seller = Process(target=Seller, args=(selleralicepipe, sellerbankpipe, PUBLIC_BANK_KEY, args))
+    bank = Process(target=Bank, args=(bankalicepipe, banksellerpipe, PRIVATE_BANK_KEY, PUBLIC_BANK_KEY, args))
     alice.start()
     bank.start()
-    client.start()
+    seller.start()
     alice.join()
-    client.join()
+    seller.join()
     bank.join()
-
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -232,4 +260,6 @@ if __name__ == "__main__":
         )
     parser.add_argument("count", type=int, help="Количество чеков для отправки банку (Степень доверия)")
     parser.add_argument("-amount", type=int, help="Запуск программы с попыткой подделать 1 чек другой суммой (в чеках сумма {})".format(AMOUNT))
+    parser.add_argument("-fakesign", action='store_true', help="Пробуем подставить подпись в другой чек")
+    parser.add_argument("-fakedata", action='store_true', help="Пробуем подставить другие данные в чек")
     main(parser.parse_args())
