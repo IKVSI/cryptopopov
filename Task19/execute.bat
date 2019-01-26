@@ -1,0 +1,4 @@
+@ECHO OFF
+TITLE MASTER
+python main.py
+PAUSE
