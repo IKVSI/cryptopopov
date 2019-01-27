@@ -16,9 +16,9 @@ class Sock():
         self.data = b""
         if server:
             self.name = "Bob"
+            self.log("Ожидание подключения от Alice на host={} port={}".format(self.address, self.port))
             sock = socket.socket()
             sock.bind((self.address, self.port))
-            self.log("Ожидание подключения от Alice host={} port={}".format(self.address, self.port))
             sock.listen(1)
             self.connection, self.conn_address = sock.accept()
         else:
@@ -184,6 +184,6 @@ if __name__ == "__main__":
     parser.add_argument("-prime", default=0, type=int, help="Установить своё простое число для сообщения")
     parser.add_argument("-primeend", default=0, type=int, help="Если установлено это число, то простое будет взято из диапазона [prime, primeend]")
     parser.add_argument("-p", action='store_true', help="Пауза в конце программы")
-    parser.add_argument("message", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку (default = {})".format(CODEPAGE))
+    parser.add_argument("message", type=str, nargs="*", help="Сообщения используют однобайтовую кодировку ({})".format(CODEPAGE))
     main(parser.parse_args())
 
