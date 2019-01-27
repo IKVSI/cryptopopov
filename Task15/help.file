@@ -1,0 +1,8 @@
+usage: main.py [-h] [-n N]
+
+Реализация протокола доказательства с нулевым разглашением на основе
+дискретного логорифма
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -n N        Количество проверок для убеждения Боба, default=15

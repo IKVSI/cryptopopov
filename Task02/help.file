@@ -1,0 +1,10 @@
+usage: main.py [-h] [-n N] [-b B] [-badday] [-status STATUS]
+
+Реализация Головоломки Меркла на основе укорачивания ключа
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -n N            Количество генерируемых сообщений
+  -b B            Количество бит для ключа сообщений
+  -badday         Худший случай для Eva (Bob выбрал последее сообщение)
+  -status STATUS  Количество дополнительных временные отметок взлома

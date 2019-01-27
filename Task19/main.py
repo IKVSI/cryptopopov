@@ -126,7 +126,7 @@ def Bob(alice, eva, KEY, args):
     NAME = "Bob"
     net = NeuralNet(KEY)
     EMESS = alice.recv()
-    print(log("KEY={} PKEY={}".format(net.weights, net.pweights)))
+    #print(log("KEY={} PKEY={}".format(net.weights, net.pweights)))
     while True:
         DMESS = net.decrypt(EMESS)
         alice.send(DMESS)
@@ -174,7 +174,7 @@ def Eva(alice, bob, args):
         for j in p:
             net[i].pweights = j
             if net[i].decrypt(EMESS) == DMESS:
-                print(log("KEY={} PKEY={}".format(net[i].weights, net[i].pweights)))
+                #print(log("KEY={} PKEY={}".format(net[i].weights, net[i].pweights)))
                 tnet = net[i]
                 fl = True
                 break
@@ -222,6 +222,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Протокол порождения через нейросеть, симуляция Eva"
+        description="Протокол обучения нейросетевого криптографического шифра, симуляция Eva"
         )
     main(parser.parse_args())

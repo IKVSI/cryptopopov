@@ -158,6 +158,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Протокол порождения через нейросеть"
+        description="Протокол обучения нейросетевого криптографического шифра"
         )
     main(parser.parse_args())

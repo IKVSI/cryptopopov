@@ -1,0 +1,10 @@
+python main.py -restore secret-1.seq secret-10.seq secret-5.seq
+Предоставлено 3 секретных частей
+Traceback (most recent call last):
+  File "main.py", line 146, in <module>
+    main(parser.parse_args())
+  File "main.py", line 95, in main
+    restore(args.restore)
+  File "main.py", line 88, in restore
+    raise ValueError("Ошибка декодирования, не хватает частей секрета")
+ValueError: Ошибка декодирования, не хватает частей секрета

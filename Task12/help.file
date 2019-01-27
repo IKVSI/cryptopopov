@@ -1,0 +1,15 @@
+usage: main.py [-h] [-restore RESTORE [RESTORE ...]] [-access ACCESS]
+               [-parts PARTS]
+               [secret [secret ...]]
+
+Программа реализации разделения секрета с помощью многочленов Лагранжа
+
+positional arguments:
+  secret                Секрет
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -restore RESTORE [RESTORE ...]
+                        Путь к файлам с разделёнными секретами
+  -access ACCESS        Количество человек для доступа к секрету
+  -parts PARTS          Количество разделений секрета

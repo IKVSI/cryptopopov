@@ -81,6 +81,7 @@ def client(name, pipes, message):
         j += 1
         if not j%8:
             if sym == 0:
+                print("\n".join(logtemp))
                 break
             M += sym.to_bytes(1, "little").decode("cp866")
             sym = 0

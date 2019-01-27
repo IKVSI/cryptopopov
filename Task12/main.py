@@ -96,19 +96,24 @@ def main(args):
         return
     args.secret = " ".join(args.secret)
     #  --  Разбиваем секрет на числовые блоки  --
+    print("Разбиваем секрет на числовые блоки")
     numsecret = [ int.from_bytes(i.encode("cp866"), "little") for i in args.secret ]
     secretparts = []
     for i in range(args.parts):
         secretparts.append([])
     #  --  Для каждого блока создаём набор разделений  --
+    print("Для каждого блока создаём набор разделений")
     for i in numsecret:
+        #print("Выбираем простое число > 1 байта")
         # Выбираем простое число > 1 байта
         prime = random.choice([j for j in sieve.primerange(500, 1000)])
         a = [i]
         # Выбираем набор коэфициентов
+        #print("Выбираем набор коэфициентов")
         for j in range(args.access-1):
             a.append(random.randint(1, prime-1))
         # Выбираем коэфициент для разделения
+        #print("Выбираем коэфициент для разделения")
         xarr = [j for j in range(1, prime-1)]
         for j in range(args.parts):
             x = random.choice(xarr)

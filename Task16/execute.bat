@@ -1,4 +1,4 @@
 @ECHO OFF
 TITLE MASTER
-python main.1.py
+python main.py
 PAUSE

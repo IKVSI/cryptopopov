@@ -157,5 +157,5 @@ if __name__ == "__main__":
     parser.add_argument("-n", type=int, help="Количество генерируемых сообщений")
     parser.add_argument("-b", type=int, help="Количество бит для ключа сообщений")
     parser.add_argument("-badday", action="store_true", help="Худший случай для Eva (Bob выбрал последее сообщение)")
-    parser.add_argument("-status", type=int, default=0, help="Количество дополнительных временные отметок взлома")
+    parser.add_argument("-status", type=int, default=1, help="Количество дополнительных временные отметок взлома")
     main(parser.parse_args())

@@ -1,3 +1,3 @@
 @ECHO OFF
-python main.py 10
+python main.py 100
 PAUSE

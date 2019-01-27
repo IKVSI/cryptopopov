@@ -1,0 +1,6 @@
+usage: main.py [-h]
+
+Протокол обучения нейросетевого криптографического шифра
+
+optional arguments:
+  -h, --help  show this help message and exit

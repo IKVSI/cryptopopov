@@ -1,0 +1,7 @@
+usage: main.py [-h] [-n N]
+
+Протокол обмена ключом 8bit через нейросеть, симуляция Евы
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -n N        Количество ключей для обмена (запусков)

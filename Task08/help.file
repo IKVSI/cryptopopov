@@ -1,0 +1,13 @@
+usage: main.py [-h] [-amount AMOUNT] [-fakesign] [-fakedata] count
+
+Программа подписи чека в банке с анонимным ID конверты
+
+positional arguments:
+  count           Количество чеков для отправки банку (Степень доверия)
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -amount AMOUNT  Запуск программы с попыткой подделать 1 чек другой суммой (в
+                  чеках сумма 1000)
+  -fakesign       Пробуем подставить подпись в другой чек
+  -fakedata       Пробуем подставить другие данные в чек
